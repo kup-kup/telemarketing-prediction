@@ -1,6 +1,6 @@
 # telemarketing-prediction
 
-This repository contains a machine learning project focused on predicting the success of telemarketing campaigns. The project utilizes a dataset of telemarketing calls, which includes various features such as call duration, customer demographics, and previous interactions. The goal is to build a predictive model that can accurately classify whether a telemarketing call will result in a successful outcome (e.g., a sale or positive response).
+This repository contains a machine learning project focused on predicting the success of telemarketing campaigns. The project utilizes a [dataset](#citation) of telemarketing calls, which includes various features such as call duration, customer demographics, and previous interactions. The goal is to build a predictive model that can accurately classify whether a telemarketing call will result in a successful outcome (e.g., a sale or positive response).
 
 **Setting Up the Environment**
 
@@ -27,9 +27,9 @@ This repository contains a machine learning project focused on predicting the su
 
 **other attributes:**
 - campaign: number of contacts performed during this campaign and for this client (numeric, includes last contact)
--  pdays: number of days that passed by after the client was last contacted from a previous campaign (numeric; 999 means client was not previously contacted)
--  previous: number of contacts performed before this campaign and for this client (numeric)
--  poutcome: outcome of the previous marketing campaign (categorical: "failure","nonexistent","success")
+- pdays: number of days that passed by after the client was last contacted from a previous campaign (numeric; 999 means client was not previously contacted)
+- previous: number of contacts performed before this campaign and for this client (numeric)
+- poutcome: outcome of the previous marketing campaign (categorical: "failure","nonexistent","success")
 
 **social and economic context attributes:**
 - emp.var.rate: employment variation rate - quarterly indicator (numeric)
@@ -40,3 +40,9 @@ This repository contains a machine learning project focused on predicting the su
 
 ## Output variable (desired target):
 - y - has the client subscribed a term deposit? (binary: "yes","no")
+
+## Missing Attribute Values
+There are several missing values in some categorical attributes, all coded with the "unknown" label. These missing values can be treated as a possible class label or using deletion or imputation techniques. 
+
+# Citation
+[1] Moro, S., Rita, P., & Cortez, P. (2014). Bank Marketing [Dataset]. UCI Machine Learning Repository. https://doi.org/10.24432/C5K306.

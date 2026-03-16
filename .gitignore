@@ -1,6 +1,7 @@
 data/
 output/
 test*
+.dist/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
