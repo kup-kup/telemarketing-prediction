@@ -13,7 +13,7 @@ All functions' names start with `tp_` to avoid naming conflicts and to indicate 
 def tp_simple_transform(df: pd.DataFrame) -> pd.DataFrame:
     """
     - transform `y` to boolean
-    - drop duration column
+    - drop duration, pdays column
     - transform pdays to previously_contacted (boolean)
     """
     df_transformed = df.copy()
