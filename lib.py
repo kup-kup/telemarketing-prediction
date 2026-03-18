@@ -6,6 +6,10 @@ This module contains utility functions for data preparation for the telemarketin
 All functions' names start with `tp_` to avoid naming conflicts and to indicate their purpose.
 """
 
+#############################################################
+# Transformation ############################################
+#############################################################
+
 def tp_simple_transform(df: pd.DataFrame) -> pd.DataFrame:
     """
     - transform `y` to boolean
@@ -84,59 +88,155 @@ def tp_test_mcar(df: pd.DataFrame, alpha: float = 0.05, missing_cols: list|None 
     
     return pd.DataFrame(res, columns=['missing_column', 'tested_column', 'p_value'])
 
-# TEST FIRST
-def tp_multinomial_impute(df: pd.DataFrame, missing_cols=None, random_state=42) -> pd.DataFrame:
-    """
-    Impute missing categorical values using multinomial logistic regression.
-    Does not use LabelEncoder on the original data - only internally for fitting.
+#############################################################
+# Imputation ################################################
+#############################################################
+class TPMultinomialImputer:
+    def __init__(self, missing_cols=None, random_state=42, logreg_opts=None):
+        self.missing_cols = missing_cols if missing_cols is not None else ["job", "marital", "housing", "loan", "education"]
+        self.random_state = random_state
+        self.logreg_opts = logreg_opts if logreg_opts is not None else {
+            'solver': 'lbfgs',
+            'max_iter': 100,
+        }
+
+        self.logreg_models = {}
+        self.feature_columns = {}  # Store column names for each model
     
-    Args:
-        df: Input dataframe
-        missing_cols: List of columns with missing values to impute
-        random_state: Random state for reproducibility
+    def fit(self, df: pd.DataFrame):
+        self.df = df.copy()
+        for col in self.missing_cols:
+            if col == 'education':
+                continue
+
+            missing_mask = (self.df[col] == 'unknown') | self.df[col].isnull()
+            
+            if missing_mask.sum() == 0:
+                continue
+            
+            X_train = self.df.loc[~missing_mask, ~self.df.columns.isin(self.missing_cols)].copy()
+            y_train = self.df.loc[~missing_mask, col].copy()
+            X_train_encoded = pd.get_dummies(X_train, drop_first=False)
+            
+            # Store the column names for later use
+            self.feature_columns[col] = X_train_encoded.columns.tolist()
+            
+            from sklearn.linear_model import LogisticRegression
+            model = LogisticRegression(**self.logreg_opts, random_state=self.random_state)
+            model.fit(X_train_encoded, y_train)
+            self.logreg_models[col] = model
     
-    Returns:
-        DataFrame with imputed values
-    """
-    from sklearn.linear_model import LogisticRegression
-    if missing_cols is None:
-        missing_cols = ["job", "marital", "default" ,"housing", "loan"]
+    def transform(self, df: pd.DataFrame, verbose=False) -> pd.DataFrame:
+        df_imputed = df.copy()
+        for col in self.missing_cols:
+            if col == 'education':
+                continue
+
+            missing_mask = (df_imputed[col] == 'unknown') | df_imputed[col].isnull()
+            
+            if missing_mask.sum() == 0:
+                continue
+            
+            X_pred = df_imputed.loc[missing_mask, ~df_imputed.columns.isin(self.missing_cols)].copy()
+            X_pred_encoded = pd.get_dummies(X_pred, drop_first=False)
+            # Reindex to match training columns
+            X_pred_encoded = X_pred_encoded.reindex(columns=self.feature_columns[col], fill_value=0)
+            
+            model = self.logreg_models[col]
+            predictions = model.predict(X_pred_encoded)
+            df_imputed.loc[missing_mask, col] = predictions
+        
+        if verbose:
+            for col in self.missing_cols:
+                if col == 'education':
+                    continue
+                print(f"\nImputation summary for '{col}':")
+                summary = pd.DataFrame({
+                    'Before': df[col].value_counts(),
+                    'Percent Before': (df[col].value_counts() / len(df) * 100).round(2),
+                    'After': df_imputed[col].value_counts()
+                })
+                imputed = summary['After'] - summary['Before']
+                summary['Imputed'] = imputed
+                summary['Percent Imputed'] = (imputed / imputed.sum()).round(2)
+                summary.sort_values('Before', ascending=False, inplace=True)
+                print(summary)
+
+        return df_imputed
     
-    df_imputed = df.copy()
+class TPKNNImputer:
+    def __init__(self, missing_col=None, mapping=None, knn_opts=None):
+        if missing_col is None:
+            self.missing_col = "education"
+            self.mapping = {
+                "unknown": np.nan, # to be imputed later
+                "illiterate": 0,
+                "basic.4y": 1,
+                "basic.6y": 2,
+                "basic.9y": 3,
+                "high.school": 4,
+                "professional.course": 5,
+                "university.degree": 6,
+            }
+        else:
+            self.missing_col = missing_col
+            self.mapping = mapping
+        self.mapping_inv = {v: k for k, v in self.mapping.items()} # type: ignore
+        self.knn_opts = knn_opts if knn_opts is not None else {'n_neighbors': 5}
+        self.imputer = None
+        self.feature_columns = None
     
-    for col in missing_cols:
-        # Identify rows with missing values
-        missing_mask = (df_imputed[col] == 'unknown') | df_imputed[col].isnull()
+    def fit(self, df: pd.DataFrame):
+        assert isinstance(self.mapping, dict)
+        from sklearn.impute import KNNImputer
         
-        if missing_mask.sum() == 0:
-            continue
+        df_prep = df.copy()
+        df_prep[self.missing_col] = df_prep[self.missing_col].map(self.mapping)
         
-        # Prepare training data (rows without missing values)
-        train_mask = ~missing_mask
-        X_train = df_imputed.loc[train_mask, df_imputed.columns != col].copy()
-        y_train = df_imputed.loc[train_mask, col].copy()
+        X = df_prep.copy()
+        X_encoded = pd.get_dummies(X, drop_first=False)
         
-        # Encode categorical features in X_train
-        X_train_encoded = pd.get_dummies(X_train, drop_first=False)
+        self.feature_columns = X_encoded.columns.tolist()
+        self.imputer = KNNImputer(**self.knn_opts) # type: ignore
+        self.imputer.fit(X_encoded)
+
+    def transform(self, df: pd.DataFrame, verbose=False) -> pd.DataFrame:
+        assert isinstance(self.mapping, dict)
+        assert self.imputer is not None
         
-        # Prepare prediction data (rows with missing values)
-        X_pred = df_imputed.loc[missing_mask, df_imputed.columns != col].copy()
-        X_pred_encoded = pd.get_dummies(X_pred, drop_first=False)
+        df_imputed = df.copy()
+        df_imputed[self.missing_col] = df_imputed[self.missing_col].map(self.mapping)
         
-        # Align columns (X_pred might have different dummy columns)
-        X_pred_encoded = X_pred_encoded.reindex(columns=X_train_encoded.columns, fill_value=0)
+        # Identify rows with missing values before imputation
+        missing_mask = df_imputed[self.missing_col].isnull()
         
-        # Fit multinomial logistic regression
-        model = LogisticRegression(
-            multi_class='multinomial',
-            max_iter=1000,
-            random_state=random_state,
-            n_jobs=-1
-        )
-        model.fit(X_train_encoded, y_train)
+        # Prepare data for imputation
+        X = df_imputed.copy()
+        X_encoded = pd.get_dummies(X, drop_first=False)
+        X_encoded = X_encoded.reindex(columns=self.feature_columns, fill_value=0)
         
-        # Predict missing values
-        predictions = model.predict(X_pred_encoded)
-        df_imputed.loc[missing_mask, col] = predictions
-    
-    return df_imputed
+        # Apply imputation
+        X_imputed = self.imputer.transform(X_encoded)
+        X_imputed_df = pd.DataFrame(X_imputed, columns=self.feature_columns, index=df.index)
+        
+        # Update the original dataframe with imputed values
+        df_imputed.loc[missing_mask, self.missing_col] = X_imputed_df.loc[missing_mask, self.missing_col]
+        
+        # Convert back to original mapping
+        df_imputed[self.missing_col] = df_imputed[self.missing_col].round().astype(int).map(self.mapping_inv)
+        
+        # Print imputation summary
+        if verbose:
+            print(f"\nImputation summary for '{self.missing_col}':")
+            summary = pd.DataFrame({
+                'Before': df[self.missing_col].value_counts(),
+                'Percent Before': (df[self.missing_col].value_counts() / len(df) * 100).round(2),
+                'After': df_imputed[self.missing_col].value_counts()
+            })
+            imputed = summary['After'] - summary['Before']
+            summary['Imputed'] = imputed
+            summary['Percent Imputed'] = (imputed / imputed.sum()).round(2)
+            summary.sort_values('Before', ascending=False, inplace=True)
+            print(summary)
+        
+        return df_imputed
