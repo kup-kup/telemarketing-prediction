@@ -1,5 +1,6 @@
 data/
 output/
+test.ipynb
 .dist/
 
 # Byte-compiled / optimized / DLL files
