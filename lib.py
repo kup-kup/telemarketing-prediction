@@ -19,7 +19,6 @@ def tp_simple_transform(df: pd.DataFrame) -> pd.DataFrame:
     df_transformed = df.copy()
     df_transformed['y'] = df_transformed['y'].map({'yes': True, 'no': False})
     df_transformed.drop(columns=['duration', 'pdays'], inplace=True)
-    df_transformed.drop(columns=['pdays'], inplace=True)
     return df_transformed
 
 def tp_encode(df: pd.DataFrame, drop_first=True) -> pd.DataFrame:
