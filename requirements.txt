@@ -1,3 +1,5 @@
 ucimlrepo
 pandas
 scikit-learn
+xgboost
+shap
