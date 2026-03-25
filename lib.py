@@ -7,6 +7,63 @@ All functions' names start with `tp_` to avoid naming conflicts and to indicate 
 """
 
 #############################################################
+# PRIME #####################################################
+#############################################################
+
+def tp_prime(
+        df: pd.DataFrame,
+        preprocessor_path = None,
+        meta_path = None,
+        verbose: bool = False
+    ) -> pd.DataFrame:
+    """Like transformers, 'prime' is the highest rank of leadership, wisdom, and authority among Cybertronians. 
+    The name 'tp_prime' reflects the function's role as the ultimate preprocessing step, where all transformations 
+    are applied to prepare the data for modeling. Just as Optimus Prime leads the Autobots with strength and wisdom,
+    'tp_prime' orchestrates the entire preprocessing pipeline, ensuring that the data is transformed and ready for 
+    the next stage of analysis or modeling."""
+
+    if preprocessor_path is None:
+        preprocessor_path = "preprocessor/preprocessors.joblib"
+    if meta_path is None:
+        meta_path = "preprocessor/preprocessors_meta.json"
+
+    import joblib
+    import json
+
+    # --- Loading ---
+    bundle = joblib.load(preprocessor_path)
+    multi_imputer = bundle["multi_imputer"]
+    knn_imputer = bundle["knn_imputer"]
+    scaler = bundle["scaler"]
+    pca = bundle["pca"]
+
+    with open(meta_path, "r", encoding="utf-8") as f:
+        meta = json.load(f)
+    PCA_cols = meta["PCA_cols"]
+    numeric_cols = meta["numeric_cols"]
+    drop_cols_after_encode = meta["drop_cols_after_encode"]
+    final_feature_order = meta["final_feature_order"]
+
+    del bundle # free memory
+    del meta
+
+    # --- Preprocessing Pipeline ---
+    df_res = df.copy()
+    df_res = multi_imputer.transform(df_res, verbose=verbose)
+    df_res = knn_imputer.transform(df_res, verbose=verbose)
+    df_res = tp_simple_transform(df_res)
+    df_res = tp_encode(df_res)
+    df_res[numeric_cols] = scaler.transform(df_res[numeric_cols])
+    df_res.drop(columns=drop_cols_after_encode, inplace=True)
+    df_res["macro_eco1"] = pca.transform(df_res[PCA_cols])[:, 0]
+    if 'default_yes' not in df_res.columns:
+        df_res['default_yes'] = False
+    df_res = df_res[final_feature_order]
+    df_res.reset_index(drop=True, inplace=True)
+
+    return df_res
+
+#############################################################
 # Transformation ############################################
 #############################################################
 
@@ -14,7 +71,6 @@ def tp_simple_transform(df: pd.DataFrame) -> pd.DataFrame:
     """
     - transform `y` to boolean
     - drop duration, pdays column
-    - transform pdays to previously_contacted (boolean)
     """
     df_transformed = df.copy()
     df_transformed['y'] = df_transformed['y'].map({'yes': True, 'no': False})

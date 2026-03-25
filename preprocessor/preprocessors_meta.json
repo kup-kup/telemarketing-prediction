@@ -1,0 +1,62 @@
+{
+  "PCA_cols": [
+    "emp.var.rate",
+    "cons.price.idx",
+    "euribor3m",
+    "nr.employed"
+  ],
+  "numeric_cols": [
+    "age",
+    "education",
+    "campaign",
+    "previous",
+    "emp.var.rate",
+    "cons.price.idx",
+    "cons.conf.idx",
+    "euribor3m",
+    "nr.employed"
+  ],
+  "drop_cols_after_encode": [
+    "poutcome_nonexistent"
+  ],
+  "final_feature_order": [
+    "age",
+    "education",
+    "campaign",
+    "previous",
+    "cons.conf.idx",
+    "y",
+    "marital_married",
+    "marital_single",
+    "job_blue-collar",
+    "job_entrepreneur",
+    "job_housemaid",
+    "job_management",
+    "job_retired",
+    "job_self-employed",
+    "job_services",
+    "job_student",
+    "job_technician",
+    "job_unemployed",
+    "housing_yes",
+    "loan_yes",
+    "poutcome_success",
+    "default_unknown",
+    "default_yes",
+    "contact_telephone",
+    "month_aug",
+    "month_dec",
+    "month_jul",
+    "month_jun",
+    "month_mar",
+    "month_may",
+    "month_nov",
+    "month_oct",
+    "month_sep",
+    "day_of_week_mon",
+    "day_of_week_thu",
+    "day_of_week_tue",
+    "day_of_week_wed",
+    "macro_eco1"
+  ]
+}
