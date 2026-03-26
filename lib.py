@@ -54,7 +54,10 @@ def tp_prime(
     df_res = tp_simple_transform(df_res)
     df_res = tp_encode(df_res)
     df_res[numeric_cols] = scaler.transform(df_res[numeric_cols])
-    df_res.drop(columns=drop_cols_after_encode, inplace=True)
+    df_res.drop(columns=drop_cols_after_encode, inplace=True, errors='ignore')
+    for col in final_feature_order:
+        if col not in df_res.columns:
+            df_res[col] = 0
     df_res["macro_eco1"] = pca.transform(df_res[PCA_cols])[:, 0]
     if 'default_yes' not in df_res.columns:
         df_res['default_yes'] = False
