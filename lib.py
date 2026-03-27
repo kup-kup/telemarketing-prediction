@@ -113,7 +113,7 @@ def tp_test_mcar(df: pd.DataFrame, alpha: float = 0.05, missing_cols: list|None 
     if missing_cols is None:
         missing_cols = ["job", "marital", "education", "default", "housing", "loan"]
 
-    categorical_columns = df.select_dtypes(include=['object', 'str']).columns.tolist()
+    categorical_columns = df.select_dtypes(include=['object', 'category', 'string']).columns.tolist()
     numerical_columns = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
 
     # Perform pairwise Chi-Square tests to check for MCAR
@@ -144,6 +144,17 @@ def tp_test_mcar(df: pd.DataFrame, alpha: float = 0.05, missing_cols: list|None 
             res.append((miss_col, num_col, p))
     
     return pd.DataFrame(res, columns=['missing_column', 'tested_column', 'p_value'])
+
+def tp_transform_macro(indicator):
+    """Transform a macroeconomic indicator value to the corresponding value in the PCA space used by the model.
+    May have some error due to rounding, but should be close enough for interpretation purposes.
+    indicator: array of shape (_, 4) containing the 4 macroeconomic indicators in the order of emp.var.rate, 
+    cons.price.idx, euribor3m, nr.employed
+    """
+    mean = np.array([8.047e-2, 9.358e1, 3.618e0, 5.167e3])
+    std = np.array([1.571e0, 5.792e-1, 1.736e0, 7.243e1])
+    cpn = np.array([5.358e-1, 4.278e-1, 5.304e-1, 4.986e-1])
+    return (indicator - mean) / std @ cpn
 
 #############################################################
 # Imputation ################################################
