@@ -1,6 +1,10 @@
-ucimlrepo
 pandas
+numpy
 scikit-learn
+scipy
 xgboost
 shap
 lifelines
+matplotlib
+seaborn
+joblib
