@@ -7,6 +7,20 @@ This repository contains a machine learning project focused on predicting the su
 1. Run `setup.ipynb`. This notebook will install the necessary dependencies for the project. Make sure to have Python and Jupyter Notebook installed on your system before running the setup.
 2. Download the dataset from [here](https://archive.ics.uci.edu/ml/datasets/Bank+Marketing) and place `back-additional-full.csv` it in the `data` folder of the repository.
 
+# Project Structure
+
+## Main Notebooks
+- `01preparation.ipynb`: This notebook contains the data preprocessing steps, including data cleaning/imputation, feature engineering, and transformation.
+- `02model_main.ipynb`: This notebook contains the model training, evaluation, tuning, and interpretation steps.
+- `03model_analysis.ipynb`: This notebook contains the survival analysis (using Kaplan-Meier estimator and Cox Proportional Hazards model) and sensitivity analysis for the Xgboost model.
+
+## Directories
+- `data/`: Contains the raw dataset file (`bank-additional-full.csv`).
+- `output/`: Contains the output files generated from the notebooks.
+- `preprocessor/`: Contains the saved preprocessor files (e.g., encoders, scalers) to be used for inference.
+- `processed-data/`: Contains the processed dataset files generated from the preparation notebook.
+- `model/`: Contains the saved machine learning model files to be used for inference.
+
 # Data Description
 
 ## Input variables:
