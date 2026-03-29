@@ -82,7 +82,7 @@ def tp_simple_transform(df: pd.DataFrame) -> pd.DataFrame:
 
 def tp_encode(df: pd.DataFrame, drop_first=True) -> pd.DataFrame:
     """
-    - one-hot encode `job`, `marital`, `education`, `contact`, `month`, and `day_of_week`
+    - one-hot encode `job`, `marital`, `education`, `contact`, `month`, `poutcome`, and `day_of_week`
     - ordinal encode `education`
     """
     df_transformed = df.copy()
